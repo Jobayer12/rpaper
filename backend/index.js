@@ -10,6 +10,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 
 
+
 app.use(express.json());
 app.disable('x-powered-by')
 runMigrations().then(r => {

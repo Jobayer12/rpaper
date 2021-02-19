@@ -38,3 +38,12 @@ exports.validationAuthority = authority =>{
         authorityId: authority.authority_id
     }
 }
+exports.passwordValidation = passwordObject =>{
+    const errors = {};
+    if(passwordObject.newPassword !== passwordObject.confirmPassword && passwordObject.confirmPassword.length < 5 && passwordObject.newPassword.length < 5)
+        errors.password = "Invalid password";
+
+    if(Object.keys(errors).length > 0){
+        throw new Error(JSON.stringify(errors));
+    }
+}

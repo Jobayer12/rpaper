@@ -1,7 +1,15 @@
 const bcrypt = require('bcryptjs');
-const {loadUser, createLocalUser, loginUser, updateUserInfo, updateAuthority} = require('../database-service/user.database-service')
-const {userValidation, validationAuthority} = require('../validation');
-const {generateToken} = require('../../../JWT');
+const {loadUser,
+    createLocalUser,
+    loginUser,
+    updateUserInfo,
+    updateAuthority,
+    resetPassword,
+    loadResetPasswordInfo,
+    updateResetPasswordField
+} = require('../database-service/user.database-service')
+const {userValidation, validationAuthority, passwordValidation} = require('../validation/user-validation');
+const {generateToken, generateResetPasswordToken} = require('../../../JWT');
 
 exports.getAllUsers =async ()=>{
     return await loadUser({'u.deleted_at': null});
@@ -58,4 +66,35 @@ exports.updateAuthority = async authority =>{
         return await  updateAuthority(authority);
     }
     throw  new Error(JSON.stringify({message: 'user not exists'}));
+}
+
+exports.resetPassword = async email =>{
+    const checkUser = await loadUser({'u.deleted_at':null, 'u.email': email});
+    if(checkUser && checkUser.length > 0){
+        const token = await generateResetPasswordToken(checkUser[0].id);
+
+       const resetPasswordObject = {
+           user_id: checkUser[0].id,
+           token,
+           is_active: true
+       }
+       return await resetPassword(resetPasswordObject);
+    }
+    throw  new Error(JSON.stringify({message: 'user not exists'}));
+}
+
+exports.changePassword = async (token, passwordInfo) =>{
+    const checkPasswordToken = await loadResetPasswordInfo({'rp.is_active': true, 'rp.token': token});
+    if(checkPasswordToken && checkPasswordToken.length > 0){
+        const validatePassword = await passwordValidation(passwordInfo);
+        const password =  bcrypt.hashSync(passwordInfo.newPassword, bcrypt.genSaltSync(10));
+        const updatePassword =  await updateUserInfo(checkPasswordToken[0].userId, {password: password});
+        if(updatePassword && updatePassword.length > 0){
+            const updatePasswordResult = await updateResetPasswordField(checkPasswordToken[0].id, {'is_active': false});
+            if(updatePasswordResult && updatePasswordResult.length > 0){
+                return updatePassword;
+            }
+        }
+    }
+    throw  new Error(JSON.stringify({message: 'Invalid token'}));
 }

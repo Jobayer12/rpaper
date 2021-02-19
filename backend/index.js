@@ -18,7 +18,7 @@ runMigrations().then(r => {
 runSeed().then(r=>{})
 
 app.use('/api/v1',[require('./router/index.router')]);
-app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { "showExplorer": true }));
+app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { "showExplorer": true }));
 
 
 app.listen(PORT, () => {
